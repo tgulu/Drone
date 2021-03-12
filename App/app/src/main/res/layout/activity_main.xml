@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/Drone Flight"
+        android:id="@+id/drone_flight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Drone Flight"
@@ -22,11 +22,15 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="263dp"
         android:layout_height="253dp"
-        tools:layout_editor_absoluteX="48dp"
-        tools:layout_editor_absoluteY="76dp">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.113"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.481">
 
         <Button
-            android:id="@+id/Down"
+            android:id="@+id/Up"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="UP"
@@ -38,13 +42,18 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
         android:layout_width="263dp"
         android:layout_height="253dp"
-        tools:layout_editor_absoluteX="519dp"
-        tools:layout_editor_absoluteY="76dp">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.481">
 
         <Button
-            android:id="@+id/Down"
+            android:id="@+id/DOWN"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DOWN"
