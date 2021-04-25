@@ -1,16 +1,22 @@
 
 
-/*ESC calibration sketch; author: ELECTRONOOBS */
+/*ESC calibration*/
 #include <Servo.h>
 
-#define MAX_SIGNAL 2000
-#define MIN_SIGNAL 1010
-#define MOTOR_PIN1 9
-#define MOTOR_PIN2 10
-#define MOTOR_PIN3 7
-#define MOTOR_PIN4 8
+//max & min power sent to motors
+#define SIGNAL_MAX 2000
+#define SIGNAL_MIN 1000
 
-int DELAY = 1000;
+//motor pin set up
+#define MOTOR_PIN1 6  /*  1   2   */
+#define MOTOR_PIN2 7  /*   \ /    */
+#define MOTOR_PIN3 8  /*   / \    */
+#define MOTOR_PIN4 9  /*  3   4   */
+
+
+
+
+int serialInput = 1000;
 
 
 Servo motor1;             /* Motors (servos), numbering:   1   2   */
@@ -20,25 +26,27 @@ Servo motor4;             /*                               3   4   */
 
 
 void setup() {
+  //set serial monitor to baud 9600 and print out begin message
   Serial.begin(9600);
-
   Serial.println(" ");
   delay(1500);
   Serial.println("Program begin...");
   delay(1000);
   Serial.println("This program will start the ESC.");
-
+ 
   motor1.attach(MOTOR_PIN1); 
   motor2.attach(MOTOR_PIN2);
   motor3.attach(MOTOR_PIN3);
   motor4.attach(MOTOR_PIN4);
 
-  Serial.print("Now writing maximum output: (");Serial.print(MAX_SIGNAL);Serial.print(" us in this case)");Serial.print("\n");
-  Serial.println("Turn on power source, then wait 2 seconds and press any key.");
-  motor1.writeMicroseconds(MAX_SIGNAL);
-  motor2.writeMicroseconds(MAX_SIGNAL);
-  motor3.writeMicroseconds(MAX_SIGNAL);
-  motor4.writeMicroseconds(MAX_SIGNAL); 
+  Serial.print("Now writing maximum output: (");Serial.print(SIGNAL_MAX);Serial.print(" us in this case)");Serial.print("\n");
+  Serial.println("Turn on power source, then wait 2 seconds and press any key."); //plug in the Lipo battery
+  
+  //set the motors to 2000 
+  motor1.writeMicroseconds(SIGNAL_MAX);
+  motor2.writeMicroseconds(SIGNAL_MAX);
+  motor3.writeMicroseconds(SIGNAL_MAX);
+  motor4.writeMicroseconds(SIGNAL_MAX); 
   
   // Wait for input
   while (!Serial.available());
@@ -47,11 +55,13 @@ void setup() {
   // Send min output
   Serial.println("\n");
   Serial.println("\n");
-  Serial.print("Sending minimum output: (");Serial.print(MIN_SIGNAL);Serial.print(" us in this case)");Serial.print("\n");
-  motor1.writeMicroseconds(MIN_SIGNAL);
-  motor2.writeMicroseconds(MIN_SIGNAL);
-  motor3.writeMicroseconds(MIN_SIGNAL);
-  motor4.writeMicroseconds(MIN_SIGNAL); 
+  Serial.print("Sending minimum output: (");Serial.print(SIGNAL_MIN);Serial.print(" us in this case)");Serial.print("\n");
+
+  //set the motors to 1000 
+  motor1.writeMicroseconds(SIGNAL_MIN);
+  motor2.writeMicroseconds(SIGNAL_MIN);
+  motor3.writeMicroseconds(SIGNAL_MIN);
+  motor4.writeMicroseconds(SIGNAL_MIN); 
   Serial.println("The ESC is calibrated");
   Serial.println("----");
   Serial.println("Now, type a values between 1000 and 2000 and press enter");
@@ -64,17 +74,17 @@ void loop() {
    
   if (Serial.available() > 0)
   {
-    int DELAY = Serial.parseInt();
-    if (DELAY > 999)
+    int serialInput = Serial.parseInt();  //Looks for the next valid integer in the incoming serial.
+    if (serialInput > 999)
     {
       
-      motor1.writeMicroseconds(DELAY);
-      motor2.writeMicroseconds(DELAY);
-      motor3.writeMicroseconds(DELAY);
-      motor4.writeMicroseconds(DELAY);
-      float SPEED = (DELAY-1000)/10;
+      motor1.writeMicroseconds(serialInput);
+      motor2.writeMicroseconds(serialInput);
+      motor3.writeMicroseconds(serialInput);
+      motor4.writeMicroseconds(serialInput);
+      float motorSpeed = (serialInput-1000)/10;
       Serial.print("\n");
-      Serial.println("Motor speed:"); Serial.print("  "); Serial.print(SPEED); Serial.print("%"); 
+      Serial.println("Current motor speed:"); Serial.print("  "); Serial.print(motorSpeed); Serial.print("%"); 
     }     
   }
 }

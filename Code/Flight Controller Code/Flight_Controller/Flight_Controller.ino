@@ -117,7 +117,7 @@ void readFrom(byte device, byte fromAddress, int num, byte result[]) {
 }
 */
 
-
+//https://forum.arduino.cc/t/scaling-gyroscope-output-mpu6050/180436
 //Function for reading the gyro.
 void gyro() {
   readFrom(MPU6050, GYRO_XOUT_H, toRead, reading);
