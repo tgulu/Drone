@@ -1,0 +1,7 @@
+read me 
+
+library dependencies
+
+WiFiNINA.h
+
+This library allows you to use the Arduino UNO WiFi Rev.2 WiFi capabilities. It can serve as either a server accepting incoming connections or a client making outgoing ones. The library supports WEP, WPA2 Personal and WPA2 Enterprise encryptions. 
