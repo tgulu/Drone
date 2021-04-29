@@ -6,7 +6,7 @@
 #include <Wire.h>
 
 
-#define PORT 4791         // UDP port
+#define PORT 5880         // UDP port
 char ssid[] = "drone_controller";  //Enter SSID
 char pass[] = "fly_high64"; //Enter Password
 
@@ -33,7 +33,7 @@ void setup() {
   }
   Serial.println("");
   Serial.println(WiFi.localIP());
-
+//listens to see if anything is being sent through the UDP port
   while (!Udp.begin(PORT))  {
     Serial.println("waiting for udp connection");
   }
