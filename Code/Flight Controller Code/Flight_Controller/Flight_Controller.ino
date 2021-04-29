@@ -59,16 +59,17 @@ Servo motor4;             /*                               3   4   */
 
 char ssid[] = "Drone_Wifi";     // WiFi
 char pass[] = "flight_controller"; 
-char rbuf[BUFSIZE];
+char rbuf[BUFSIZE]; // buffer to hold incoming packet,
 char wbuf[BUFSIZE];
 int          status;
 WiFiUDP         Udp;
 
-
-byte     cThrottle;     // Commanded values (from Android)
+// Commanded values (from Android)
+byte     cThrottle;     
 short         cYaw;
 short        cRoll;
 short       cPitch;
+boolean    cCutoff; 
 
 
 void writeTo(byte device, byte address, byte value) {
@@ -222,25 +223,56 @@ void setup() {
 void loop() {
   acc();
   gyro(); 
+ Serial.begin(115200);  /******************************************/
+  Serial.println("Starting set up");
 
-  /*
-  if (Serial.available() > 0)
-  {
-    int DELAY = Serial.parseInt();
-    if (DELAY > 999)
-    {
-      
-      motor1.writeMicroseconds(DELAY);
-      motor2.writeMicroseconds(DELAY);
-      motor3.writeMicroseconds(DELAY);
-      motor4.writeMicroseconds(DELAY);
-      float SPEED = (DELAY-1000)/10;
-      Serial.print("\n");
-      Serial.println("Motor speed:"); Serial.print("  "); Serial.print(SPEED); Serial.print("%"); 
-    }     
-  }
+  int totalGyroXValues  = 0;
+  int totalGyroYValues  = 0;
+  int totalGyroZValues  = 0;
+  int i;
 
-  */
+  kalman_init(&pitch_data);
+  kalman_init(&roll_data);
+  Serial.println("kalman set up");
+
+  pinMode(MOTOR_PIN1, OUTPUT);
+  pinMode(MOTOR_PIN2, OUTPUT);
+  pinMode(MOTOR_PIN3, OUTPUT);
+  pinMode(MOTOR_PIN4, OUTPUT);
+
+  motor1.attach(MOTOR_PIN1);
+  motor2.attach(MOTOR_PIN2);
+  motor3.attach(MOTOR_PIN3);
+  motor4.attach(MOTOR_PIN4);
+
+  Serial.println("motors set up");
+
+
+//  // disable SD card slot on WiFi shield
+//  pinMode(4, OUTPUT);
+//  digitalWrite(4, HIGH);
+
+  motorctl(1, MIN_SIGNAL);
+  motorctl(2, MIN_SIGNAL);
+  motorctl(3, MIN_SIGNAL);
+  motorctl(4, MIN_SIGNAL);
+
+  Serial.println("motor control set up");
+
+
+  cThrottle = 0;
+  cYaw     = 0;
+  cRoll    = 0;
+  cPitch   = 0;
+  cCtrl    = 0;
+  wbuf[0] = 'Q'; 
+  wbuf[1] = 'R'; 
+  wbuf[2] = 'O'; 
+  wbuf[3] = 'N'; 
+  wbuf[4] = 'E'; 
+
+
+  Serial.println("MPU set up");
 }
 
 /*
