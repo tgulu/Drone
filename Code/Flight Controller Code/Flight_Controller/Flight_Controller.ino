@@ -166,7 +166,7 @@ https://forum.arduino.cc/t/imu-doesnt-work-for-vertical-position/442502
 
 //https://forum.arduino.cc/t/scaling-gyroscope-output-mpu6050/180436
 //Function for reading the gyro.
-void gyro() {
+void gyro(int gyroResult[]) {
   readFrom(MPU6050, GYRO_XOUT_H, toRead, reading);
   float xgyro = ((reading[0] << 8) | reading[1]);
   //xgyro /= (float)(1<<(16-gyroSens))/250;
@@ -186,8 +186,23 @@ void gyro() {
   delay(100);
 } 
 
+
+void motorctl(unsigned short motor, unsigned short thr)
+{
+  thr = thr > MAX_SIGNAL ? MAX_SIGNAL : thr;
+  thr = thr < MIN_SIGNAL ? MIN_SIGNAL : thr;
+  if (motor == 1)
+    motor1.writeMicroseconds(thr);
+  else if (motor == 2)
+    motor2.writeMicroseconds(thr);
+  else if (motor == 3)
+    motor3.writeMicroseconds(thr);
+  else if (motor == 4)
+    motor4.writeMicroseconds(thr);
+}
 //Function for reading the accelerometer.
-void acc() {
+
+void acc(int accelResult[]) {
   readFrom(MPU6050, ACCEL_XOUT_H, toRead, reading);
   float xacc = ((reading[0] << 8) | reading[1]);
   xacc /= (float)(1<<(16-accSens-2));
@@ -212,10 +227,7 @@ void acc() {
 /**********************************/
 
 void setup() {
-  /*
-  Wire.begin();            //Open I2C communications as master
-  Serial.begin(9600);    //Open serial communications to the PC to see what's happening
-  */
+
   
 //  Serial.println(" ");
 //  delay(1500);
@@ -223,8 +235,8 @@ void setup() {
 //  delay(1000);
 //  Serial.println("This program will start the ESC.");
 
-  Serial.begin(115200);  /******************************************/
-  Serial.println("Starting set up");
+  Serial.begin(115200);  
+  Serial.println("Starting set up"); //Open serial communications to the PC to see what's happening
 
   int totalGyroXValues  = 0;
   int totalGyroYValues  = 0;
@@ -330,9 +342,235 @@ void setup() {
 
 
 void loop() {
-  acc();
-  gyro(); 
+    getGyroscopeReadings(gyroResult);      // Read gyro and accelerometer sensors
+    timeStep=millis()-prevlooptime;        // measure time
+    timeStepS=timeStep/1000.0;
+    prevlooptime=millis();
+    getAccelerometerReadings(accelResult);
+    pitchAccel =atan2(accelResult[1] / 256.0,accelResult[2] / 256.0) * 360.0 / (2*PI) - pitchError;
+    rollAccel  =atan2(accelResult[0] / 256.0,accelResult[2] / 256.0) * 360.0 / (2*PI) - rollError;
+  
+     pitchGyroRate=(gyroResult[0] - biasGyroX) / 14.375;
+      rollGyroRate=(gyroResult[1] - biasGyroY) / 14.375;
+    pitchGyroDelta=pitchGyroRate*timeStepS;
+     rollGyroDelta=rollGyroRate *timeStepS;
+  
+    // Kalman filter
+    kalman_innovate(&pitch_data,pitchAccel, pitchGyroRate,timeStepS);
+    kalman_innovate(&roll_data,  rollAccel,-rollGyroRate, timeStepS);
+    pitchPrediction=pitch_data.x1;
+    rollPrediction = roll_data.x1;
+  
+    //Waiting for incoming UDP packed
+    // if there's data available, read a packet
+    rbuf[0]=0;
+    if (Udp.parsePacket()){
+      Serial.println("GOT PACKET");
+      badpacket=0;
+      commstart=1;
+      int len=Udp.read(rbuf, BUFSIZE);
+      if (len>0)
+      {
+        rbuf[len] = 0;
+        if (rbuf[0]=='D' && rbuf[1]=='R' && rbuf[2]=='O' && rbuf[3]=='N' && rbuf[4]=='E')
+        {
+          packettime=millis();
+          emerdst=0;
+          cThrottle=rbuf[5];
+          cYaw=rbuf[8] & 0x00FF;
+          cYaw-=127;
+          Kp=*(float *)&rbuf[10];
+          Kd=*(float *)&rbuf[14];
+          Ki=*(float *)&rbuf[18];
+          if ( ((short)(rbuf[6] & 0x00FF)>=0) && ((short)(rbuf[6] & 0x00FF)<=180) )
+            cRoll=(rbuf[6]& 0x00FF)-90;
+          else
+            badpacket=1;
+          if ( ((short)(rbuf[7] & 0x00FF)>=0) && ((short)(rbuf[7] & 0x00FF)<=180) )
+            cPitch=(rbuf[7] & 0x00FF)-90;
+          else
+            badpacket=1;
+          if ((rbuf[9]==0) || (rbuf[9]==1))
+            cCtrl=rbuf[9];
+          else
+            badpacket=1;
+          if ((rbuf[22]==0) || (rbuf[22]==1))
+            cCutoff=rbuf[22];
+          else
+            badpacket=1;
+        }
+        else
+          badpacket=1;
+      }
+    }
+  
+    if (!cCtrl)
+    {
+      cRoll =0;
+      cPitch=0;
+    }
+    else
+    {
+      cPitch=(abs(cPitch)>MAX_TILT_ANGLE)?((abs(cPitch)/cPitch)*MAX_TILT_ANGLE):cPitch;
+      cRoll = (abs(cRoll)>MAX_TILT_ANGLE)?((abs(cRoll) /cRoll) *MAX_TILT_ANGLE):cRoll;
+    }
+  
+    // Emergency descent mode in case of comm loss
+    if ((millis()-packettime>=nocommtime)  || (WiFi.status() != WL_CONNECTED))  // 4 - no WiFi or lost WiFi, 3 - OK, (re)connected after both cases
+    {
+      emerdst=1;
+      cThrottle=EMERDSTPWR;
+    }
+  
+    // PID values
+    sumP+=(pitchPrediction+cPitch)*timeStepS;
+    sumR+=(rollPrediction -cRoll) *timeStepS;
+    pidP =Kp*(pitchPrediction+cPitch)+ Ki*sumP + Kd*pitchGyroRate;  // Gyro readings * Kd as non-0 gyro is rate of error's change!
+    pidR =Kp*(rollPrediction-cRoll)  + Ki*sumR -  Kd*rollGyroRate;
+  
+    if (cCutoff) {
+      Thrust1=MIN_SIGNAL;
+      Thrust2=MIN_SIGNAL;
+      Thrust3=MIN_SIGNAL;
+      Thrust4=MIN_SIGNAL;
+    }
+    else
+    {
+      ThrBase=map(cThrottle,THR_ANDROID_MIN,THR_ANDROID_MAX,MIN_SIGNAL,MAX_SIGNAL);
+      float TiltThrCorrection=sqrt(1 + tan(abs(pitchPrediction)*Rad)*tan(abs(pitchPrediction)*Rad) + tan(abs(rollPrediction)*Rad)*tan(abs(rollPrediction)*Rad));
+      TiltThrCorrection=TiltThrCorrection > MAX_TILT_THRUST_CORRECTION ? MAX_TILT_THRUST_CORRECTION : TiltThrCorrection;
+      ThrBase=ThrBase * TiltThrCorrection;
+  
+      Thrust1 = ThrBase - (int)cYaw - pidP + pidR;
+      Thrust2 = ThrBase + (int)cYaw - pidP - pidR;
+      Thrust3 = ThrBase - (int)cYaw + pidP - pidR;
+      Thrust4 = ThrBase + (int)cYaw + pidP + pidR;
+    }
+    motorctl(1,Thrust1);
+    motorctl(2,Thrust2);
+    motorctl(3,Thrust3);
+    motorctl(4,Thrust4);
+  
+    if (millis()-sendtime>=sendfq && commstart)
+    {
+      //BatLvl=readVcc();                 // 4892mV=full; disabled - takes additional 5ms
+      wbuf[0]='D';
+      wbuf[5]=0;
+      wbuf[6]=(short)rollPrediction+90;
+      wbuf[7]=0;
+      wbuf[8]=(short)pitchPrediction+90;
+      wbuf[9]=0;  //HDG>>8;               // Heading and altitude not there yet
+      wbuf[10]=0; //HDG;
+      wbuf[11]=0; //ALT>>8;
+      wbuf[12]=0; //ALT;
+      wbuf[13]=cThrottle;
+      wbuf[14]=0;
+      wbuf[15]=BatLvl>>8;
+      wbuf[16]=BatLvl;
+      wbuf[17]=cYaw;
+      wbuf[18]=cCtrl;
+      wbuf[19]=*(byte *)&timeStep;
+      //sending UDP packets to the phone
+      if (Udp.beginPacket(Udp.remoteIP(), Udp.remotePort()))
+      {
+        Udp.write(wbuf, BUFSIZE);
+        if (!Udp.endPacket())
+        {
+          send_failed=1;
+        }
+        else
+        {
+          send_failed=0;
+          sendtime=millis();
+        }
+      }
+      else
+      {
+        send_failed=1;
+      }
+    }
+} 
 
+
+//https://lhelge.se/2012/04/pitch-and-roll-estimating-kalman-filter-for-stabilizing-quadrocopters/
+void kalman_innovate(kalman_data *data, float z1, float z2, float DT)
+{
+  float y1, y2;
+  float a, b, c;
+  float sDet;
+  float s11, s12, s21, s22;
+  float k11, k12, k21, k22, k31, k32;
+  float p11, p12, p13, p21, p22, p23, p31, p32, p33;
+
+  // Step 1
+  // x(k) = Fx(k-1) + Bu + w:
+  data->x1 = data->x1 + DT * data->x2 - DT * data->x3;
+  //x2 = x2;
+  //x3 = x3;
+
+  // Step 2
+  // P = FPF'+Q
+  a = data->p11 + data->p21 * DT - data->p31 * DT;
+  b = data->p12 + data->p22 * DT - data->p32 * DT;
+  c = data->p13 + data->p23 * DT - data->p33 * DT;
+  data->p11 = a + b * DT - c * DT + data->q1;
+  data->p12 = b;
+  data->p13 = c;
+  data->p21 = data->p21 + data->p22 * DT - data->p23 * DT;
+  data->p22 = data->p22 + data->q2;
+  //p23 = p23;
+  data->p31 = data->p31 + data->p32 * DT - data->p33 * DT;
+  //p32 = p32;
+  data->p33 = data->p33 + data->q3;
+
+  // Step 3
+  // y = z(k) - Hx(k)
+  y1 = z1 - data->x1;
+  y2 = z2 - data->x2;
+
+  // Step 4
+  // S = HPT' + R
+  s11 = data->p11 + data->r1;
+  s12 = data->p12;
+  s21 = data->p21;
+  s22 = data->p22 + data->r2;
+
+  // Step 5
+  // K = PH*inv(S)
+  sDet = 1 / (s11 * s22 - s12 * s21);
+  k11 = (data->p11 * s22 - data->p12 * s21) * sDet;
+  k12 = (data->p12 * s11 - data->p11 * s12) * sDet;
+  k21 = (data->p21 * s22 - data->p22 * s21) * sDet;
+  k22 = (data->p22 * s11 - data->p21 * s12) * sDet;
+  k31 = (data->p31 * s22 - data->p32 * s21) * sDet;
+  k32 = (data->p32 * s11 - data->p31 * s12) * sDet;
+
+  // Step 6
+  // x = x + Ky
+  data->x1 = data->x1 + k11 * y1 + k12 * y2;
+  data->x2 = data->x2 + k21 * y1 + k22 * y2;
+  data->x3 = data->x3 + k31 * y1 + k32 * y2;
+
+  // Step 7
+  // P = (I-KH)P
+  p11 = data->p11 * (1.0f - k11) - data->p21 * k12;
+  p12 = data->p12 * (1.0f - k11) - data->p22 * k12;
+  p13 = data->p13 * (1.0f - k11) - data->p23 * k12;
+  p21 = data->p21 * (1.0f - k22) - data->p11 * k21;
+  p22 = data->p22 * (1.0f - k22) - data->p12 * k21;
+  p23 = data->p23 * (1.0f - k22) - data->p13 * k21;
+  p31 = data->p31 - data->p21 * k32 - data->p11 * k31;
+  p32 = data->p32 - data->p22 * k32 - data->p12 * k31;
+  p33 = data->p33 - data->p23 * k32 - data->p13 * k31;
+  data->p11 = p11;
+  data->p12 = p12;
+  data->p13 = p13;
+  data->p21 = p21;
+  data->p22 = p22;
+  data->p23 = p23;
+  data->p31 = p31;
+  data->p32 = p32;
+  data->p33 = p33;
 }
 
 
