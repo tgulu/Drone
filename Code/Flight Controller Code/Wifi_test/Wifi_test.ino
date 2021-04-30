@@ -33,7 +33,7 @@ void setup() {
   }
   Serial.println("");
   Serial.println(WiFi.localIP());
-//listens to see if anything is being sent through the UDP port
+//listens to see if anything is being sent through the UDP port 
   while (!Udp.begin(PORT))  {
     Serial.println("waiting for udp connection");
   }
