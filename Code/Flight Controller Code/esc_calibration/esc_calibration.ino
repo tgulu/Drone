@@ -8,10 +8,10 @@
 #define SIGNAL_MIN 1000
 
 //motor pin set up
-#define MOTOR_PIN1 9  /*  1   2   */
+#define MOTOR_PIN1 9   /*  1   2   */
 #define MOTOR_PIN2 10  /*   \ /    */
-#define MOTOR_PIN3 12 /*   / \    */
-#define MOTOR_PIN4 11 /*  3   4   */
+#define MOTOR_PIN3 11  /*   / \    */
+#define MOTOR_PIN4 12  /*  3   4   */
 
 
 
