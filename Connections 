@@ -1,0 +1,8 @@
+Schematic explanation. 
+
+Position			Motor		direction
+FL			Motor 1		Clockwise             1   2   
+FR			Motor 2		counterclockwise       \ /   
+BL			Motor 3		Clockwise              / \ 
+BR			Motor 4		counterclockwise      3   4 
+
