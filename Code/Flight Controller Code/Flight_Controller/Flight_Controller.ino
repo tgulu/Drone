@@ -25,7 +25,7 @@
 #define GYRO_ZOUT_H 0x47
 #define GYRO_ZOUT_L 0x48
 
-//https://forum.arduino.cc/t/how-to-use-i2c-and-mpu6050/430974
+
 #define PWR_MGMT_1 0x6B
 #define PWR_MGMT_2 0x6C
 
@@ -33,14 +33,14 @@
 #define gyro_readings 6;
 
 #define toRead 6
-byte reading[toRead];
+
 
 #define MAX_SIGNAL 2000
 #define MIN_SIGNAL 1000
-#define MOTOR_PIN1 9
-#define MOTOR_PIN2 10
-#define MOTOR_PIN3 11
-#define MOTOR_PIN4 12
+#define MOTOR_PIN1 4
+#define MOTOR_PIN2 5
+#define MOTOR_PIN3 6
+#define MOTOR_PIN4 7
 #define THR_ANDROID_MIN 0
 #define THR_ANDROID_MAX 255
 #define MAX_TILT_THRUST_CORRECTION 1.3 // 30%
@@ -69,19 +69,22 @@ int          status;
 WiFiUDP         Udp;
 
 
-long  BatLvl = 0;
-long  WifiAtt = 0;
+
 
 // Commanded values (from Android)
 byte     cThrottle;     
 short         cYaw;
 short        cRoll;
 short       cPitch;
+boolean      cCtrl; 
 boolean    cCutoff; 
+boolean   communistart = 0;
+boolean   badpacket = 0;
+long  BatLvl = 0;
+long  WifiAtt = 0;
 
 
-
-int   gyroResult[3], accelResult[3];  // Gyro/Accel; static accelerometer's biases measured on fixed drone with engines off
+int   gyroResult[3], accelResult[3];  
 float biasGyroX = 0, biasGyroY = 0, biasGyroZ = 0;
 float pitchGyro;
 float pitchAccel;
@@ -92,7 +95,7 @@ float rollGyroDelta;
 float pitchGyroRate;
 float rollGyroRate;
 float pitchError = 1.18; //0.34;   // Static accelerometer's readings on the flat horizontal surface
-float rollError = 1.5; //3.99;     // i.e. errors due to not ideal IMU 6DOF chip position on the drone
+float rollError = 1.5; //3.99;     // i.e. errors from IMU=
 float Rad = 0.01745;
 
 float     Kp = 0;    // PID
@@ -125,68 +128,6 @@ void readFrom(byte device, byte address, byte bytes, byte reading[]) {
   }
 }
 
-#define Q1 0.1       // Kalman filter 0.1/0.05/0.005
-#define Q2 0.05
-#define Q3 0.005
-#define R1 6000      // 5000
-#define R2 715       // 715
-struct kalman_data
-{
-  float x1, x2, x3;
-  float p11, p12, p13, p21, p22, p23, p31, p32, p33;
-  float q1, q2, q3;
-  float r1, r2;
-};
-kalman_data pitch_data;
-kalman_data roll_data;
-float pitchPrediction = 0;
-float rollPrediction  = 0;
-
-int      ThrBase = 0;          // Thrust
-int      Thrust1 = MIN_SIGNAL;
-int      Thrust2 = MIN_SIGNAL;
-int      Thrust3 = MIN_SIGNAL;
-int      Thrust4 = MIN_SIGNAL;
-float    Yaw_factor = 1;
-
-boolean            emerdst = 0;    // Emergency descent flag
-unsigned long     sendtime = 0;    // Time since last UDP packet sent (ms)
-unsigned short      sendfq = 200;  // Frequency of updates to Android (ms)
-unsigned long   packettime = 0;    // Time since last UDP packet received (ms)
-unsigned long   nocommtime = 1500; // Maximum incoming packets absence time (ms)
-unsigned long prevlooptime = 0;
-unsigned long     timeStep;        // Times since last loop ms, s
-float            timeStepS;
-
-/*
-https://arduino.stackexchange.com/questions/38908/how-can-arduino-know-wire-available-is-true-or-false
-https://forum.arduino.cc/t/imu-doesnt-work-for-vertical-position/442502
- 
-*/
-
-//https://forum.arduino.cc/t/scaling-gyroscope-output-mpu6050/180436
-//Function for reading the gyro.
-void gyro(int gyroResult[]) {
-  readFrom(MPU6050, GYRO_XOUT_H, toRead, reading);
-  float xgyro = ((reading[0] << 8) | reading[1]);
-  //xgyro /= (float)(1<<(16-gyroSens))/250;
-  float ygyro = ((reading[2] << 8) | reading[3]);
-  // "Scale output somehow"
-  float zgyro = ((reading[4] << 8) | reading[5]);
-
-  float resultant = sqrt(pow(xgyro,2) +pow(ygyro,2) + pow(zgyro,2));
-
-  Serial.print(xgyro,3);
-  Serial.print('\t');
-  Serial.print(ygyro,3);
-  Serial.print('\t');
-  Serial.print(zgyro,3);
-  Serial.print('\t');
-  Serial.println(resultant,3);
-  delay(100);
-} 
-
-
 void motorctl(unsigned short motor, unsigned short thr)
 {
   thr = thr > MAX_SIGNAL ? MAX_SIGNAL : thr;
@@ -200,9 +141,63 @@ void motorctl(unsigned short motor, unsigned short thr)
   else if (motor == 4)
     motor4.writeMicroseconds(thr);
 }
+
+#define Q1 0.1       // Kalman filter 0.1/0.05/0.005
+#define Q2 0.05
+#define Q3 0.005
+#define R1 6000      // 5000
+#define R2 715       // 715
+
+
+struct kalman_data
+{
+  float x1, x2, x3;
+  float p11, p12, p13, p21, p22, p23, p31, p32, p33;
+  float q1, q2, q3;
+  float r1, r2;
+};
+
+
+kalman_data pitch_data;
+kalman_data roll_data;
+float pitchPrediction = 0;
+float rollPrediction  = 0;
+
+int      ThrBase = 0;          // Thrust
+int      Thrust1 = MIN_SIGNAL;
+int      Thrust2 = MIN_SIGNAL;
+int      Thrust3 = MIN_SIGNAL;
+int      Thrust4 = MIN_SIGNAL;
+float    Yaw_factor = 1;
+byte reading[toRead];
+
+boolean            emerdst = 0;    // Emergency descent flag
+unsigned long     sendtime = 0;    // Time since last UDP packet sent (ms)
+unsigned short      sendfq = 200;  // Frequency of updates to Android (ms)
+unsigned long   packettime = 0;    // Time since last UDP packet received (ms)
+unsigned long   nocommtime = 1500; // Maximum incoming packets absence time (ms)
+unsigned long prevlooptime = 0;
+unsigned long     timeStep;        // Times since last loop ms, s
+float            timeStepS;
+
+
+// adapted from https://forum.arduino.cc/t/scaling-gyroscope-output-mpu6050/180436
+//Function for reading the gyro.
+void getGyroscopeReadings(int gyroResult[]) {
+  readFrom(MPU6050, GYRO_XOUT_H, toRead, reading);
+  float xgyro = ((reading[0] << 8) | reading[1]);
+  //xgyro /= (float)(1<<(16-gyroSens))/250;
+  float ygyro = ((reading[2] << 8) | reading[3]);
+  // "Scale output somehow"
+  float zgyro = ((reading[4] << 8) | reading[5]);
+
+  float resultant = sqrt(pow(xgyro,2) +pow(ygyro,2) + pow(zgyro,2));
+
+} 
+
 //Function for reading the accelerometer.
 
-void acc(int accelResult[]) {
+void getAccelerometerReadings(int accelResult[]) {
   readFrom(MPU6050, ACCEL_XOUT_H, toRead, reading);
   float xacc = ((reading[0] << 8) | reading[1]);
   xacc /= (float)(1<<(16-accSens-2));
@@ -212,14 +207,6 @@ void acc(int accelResult[]) {
   zacc /= (float)(1<<(16-accSens-2));
   float resultant = sqrt(pow(xacc,2) +pow(yacc,2) + pow(zacc,2));
 
-  Serial.print(xacc,3);
-  Serial.print('\t');
-  Serial.print(yacc,3);
-  Serial.print('\t');
-  Serial.print(zacc,3);
-  Serial.print('\t');
-  Serial.println(resultant,3);
-  delay(100);
 }
 
 /**********************************/
@@ -233,7 +220,7 @@ void setup() {
 //  delay(1500);
 //  Serial.println("Program begin...");
 //  delay(1000);
-//  Serial.println("This program will start the ESC.");
+
 
   Serial.begin(115200);  
   Serial.println("Starting set up"); //Open serial communications to the PC to see what's happening
@@ -266,17 +253,18 @@ void setup() {
 
   Serial.println("motor control set up");
 
-
-  cThrottle = 0;
-  cYaw     = 0;
-  cRoll    = 0;
-  cPitch   = 0;
-  cCtrl    = 0;
+  //udp message sent to drone 
   wbuf[0] = 'D'; 
   wbuf[1] = 'R'; 
   wbuf[2] = 'O'; 
   wbuf[3] = 'N'; 
   wbuf[4] = 'E'; 
+  cThrottle = 0;
+  cYaw     = 0;
+  cRoll    = 0;
+  cPitch   = 0;
+  cCtrl    = 0;
+
 
 
   Serial.println("MPU set up");
@@ -300,7 +288,7 @@ void setup() {
     totalGyroXValues += gyroResult[0];
     totalGyroYValues += gyroResult[1];
     totalGyroZValues += gyroResult[2];
-    delay(25);
+    delay(50);
   }
   biasGyroX = totalGyroXValues / 50;
   biasGyroY = totalGyroYValues / 50;
@@ -354,20 +342,16 @@ void loop() {
       rollGyroRate=(gyroResult[1] - biasGyroY) / 14.375;
     pitchGyroDelta=pitchGyroRate*timeStepS;
      rollGyroDelta=rollGyroRate *timeStepS;
-  
-    // Kalman filter
-    kalman_innovate(&pitch_data,pitchAccel, pitchGyroRate,timeStepS);
-    kalman_innovate(&roll_data,  rollAccel,-rollGyroRate, timeStepS);
+
     pitchPrediction=pitch_data.x1;
     rollPrediction = roll_data.x1;
   
-    //Waiting for incoming UDP packed
+    //Waiting for incoming UDP packs
     // if there's data available, read a packet
     rbuf[0]=0;
     if (Udp.parsePacket()){
       Serial.println("GOT PACKET");
-      badpacket=0;
-      commstart=1;
+      communistart=1;
       int len=Udp.read(rbuf, BUFSIZE);
       if (len>0)
       {
@@ -414,13 +398,7 @@ void loop() {
       cPitch=(abs(cPitch)>MAX_TILT_ANGLE)?((abs(cPitch)/cPitch)*MAX_TILT_ANGLE):cPitch;
       cRoll = (abs(cRoll)>MAX_TILT_ANGLE)?((abs(cRoll) /cRoll) *MAX_TILT_ANGLE):cRoll;
     }
-  
-    // Emergency descent mode in case of comm loss
-    if ((millis()-packettime>=nocommtime)  || (WiFi.status() != WL_CONNECTED))  // 4 - no WiFi or lost WiFi, 3 - OK, (re)connected after both cases
-    {
-      emerdst=1;
-      cThrottle=EMERDSTPWR;
-    }
+
   
     // PID values
     sumP+=(pitchPrediction+cPitch)*timeStepS;
@@ -451,18 +429,18 @@ void loop() {
     motorctl(3,Thrust3);
     motorctl(4,Thrust4);
   
-    if (millis()-sendtime>=sendfq && commstart)
+    if (millis()-sendtime>=sendfq && communistart)
     {
-      //BatLvl=readVcc();                 // 4892mV=full; disabled - takes additional 5ms
+
       wbuf[0]='D';
       wbuf[5]=0;
       wbuf[6]=(short)rollPrediction+90;
       wbuf[7]=0;
       wbuf[8]=(short)pitchPrediction+90;
-      wbuf[9]=0;  //HDG>>8;               // Heading and altitude not there yet
-      wbuf[10]=0; //HDG;
-      wbuf[11]=0; //ALT>>8;
-      wbuf[12]=0; //ALT;
+      wbuf[9]=0;                 
+      wbuf[10]=0; 
+      wbuf[11]=0; 
+      wbuf[12]=0; 
       wbuf[13]=cThrottle;
       wbuf[14]=0;
       wbuf[15]=BatLvl>>8;
@@ -476,103 +454,25 @@ void loop() {
         Udp.write(wbuf, BUFSIZE);
         if (!Udp.endPacket())
         {
-          send_failed=1;
+          communistart;
         }
         else
         {
-          send_failed=0;
+
           sendtime=millis();
         }
       }
       else
       {
-        send_failed=1;
+      communistart =1;
       }
     }
 } 
 
 
-//https://lhelge.se/2012/04/pitch-and-roll-estimating-kalman-filter-for-stabilizing-quadrocopters/
-void kalman_innovate(kalman_data *data, float z1, float z2, float DT)
-{
-  float y1, y2;
-  float a, b, c;
-  float sDet;
-  float s11, s12, s21, s22;
-  float k11, k12, k21, k22, k31, k32;
-  float p11, p12, p13, p21, p22, p23, p31, p32, p33;
 
-  // Step 1
-  // x(k) = Fx(k-1) + Bu + w:
-  data->x1 = data->x1 + DT * data->x2 - DT * data->x3;
-  //x2 = x2;
-  //x3 = x3;
 
-  // Step 2
-  // P = FPF'+Q
-  a = data->p11 + data->p21 * DT - data->p31 * DT;
-  b = data->p12 + data->p22 * DT - data->p32 * DT;
-  c = data->p13 + data->p23 * DT - data->p33 * DT;
-  data->p11 = a + b * DT - c * DT + data->q1;
-  data->p12 = b;
-  data->p13 = c;
-  data->p21 = data->p21 + data->p22 * DT - data->p23 * DT;
-  data->p22 = data->p22 + data->q2;
-  //p23 = p23;
-  data->p31 = data->p31 + data->p32 * DT - data->p33 * DT;
-  //p32 = p32;
-  data->p33 = data->p33 + data->q3;
-
-  // Step 3
-  // y = z(k) - Hx(k)
-  y1 = z1 - data->x1;
-  y2 = z2 - data->x2;
-
-  // Step 4
-  // S = HPT' + R
-  s11 = data->p11 + data->r1;
-  s12 = data->p12;
-  s21 = data->p21;
-  s22 = data->p22 + data->r2;
-
-  // Step 5
-  // K = PH*inv(S)
-  sDet = 1 / (s11 * s22 - s12 * s21);
-  k11 = (data->p11 * s22 - data->p12 * s21) * sDet;
-  k12 = (data->p12 * s11 - data->p11 * s12) * sDet;
-  k21 = (data->p21 * s22 - data->p22 * s21) * sDet;
-  k22 = (data->p22 * s11 - data->p21 * s12) * sDet;
-  k31 = (data->p31 * s22 - data->p32 * s21) * sDet;
-  k32 = (data->p32 * s11 - data->p31 * s12) * sDet;
-
-  // Step 6
-  // x = x + Ky
-  data->x1 = data->x1 + k11 * y1 + k12 * y2;
-  data->x2 = data->x2 + k21 * y1 + k22 * y2;
-  data->x3 = data->x3 + k31 * y1 + k32 * y2;
-
-  // Step 7
-  // P = (I-KH)P
-  p11 = data->p11 * (1.0f - k11) - data->p21 * k12;
-  p12 = data->p12 * (1.0f - k11) - data->p22 * k12;
-  p13 = data->p13 * (1.0f - k11) - data->p23 * k12;
-  p21 = data->p21 * (1.0f - k22) - data->p11 * k21;
-  p22 = data->p22 * (1.0f - k22) - data->p12 * k21;
-  p23 = data->p23 * (1.0f - k22) - data->p13 * k21;
-  p31 = data->p31 - data->p21 * k32 - data->p11 * k31;
-  p32 = data->p32 - data->p22 * k32 - data->p12 * k31;
-  p33 = data->p33 - data->p23 * k32 - data->p13 * k31;
-  data->p11 = p11;
-  data->p12 = p12;
-  data->p13 = p13;
-  data->p21 = p21;
-  data->p22 = p22;
-  data->p23 = p23;
-  data->p31 = p31;
-  data->p32 = p32;
-  data->p33 = p33;
-}
-
+// adapated from https://lhelge.se/2012/04/pitch-and-roll-estimating-kalman-filter-for-stabilizing-quadrocopters/
 
 void kalman_init(struct kalman_data *data)   // Setup the kalman data struct
 {
