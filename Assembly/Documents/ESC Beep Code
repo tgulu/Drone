@@ -1,9 +1,0 @@
-Quadrotor Drone Components List & Tools
-- This documents shows a list
-
-ESC Beep Code
-
-
-- First three beeps means that ESC is powered and activated.
-- if the throttle signal is detect goes one long low tone beep.
--  if throttle is zero goes one long high tone beep. This signal means the end of the start sequence and ESC is ready to run.
