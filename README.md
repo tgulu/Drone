@@ -1,7 +1,7 @@
 # Technical Documentation - Table of Contents
 
 
-## 1. Assembly
+## 1. Drone Assembly Images
 
 <ol>
 
@@ -18,19 +18,90 @@
 
 ![](Drone.png)
 
+•    Step One: The first thing I did was run a dry fit because I needed to check that all the pieces could fit onto the frame and that that they were all compatible with each other, i.e., checking to see if the ESC and Motors wires are the right lengths to fit onto the quadrotor’s arms. 
+
+•    Step Two: I soldered bullet connectors onto the ends of the ESC and Motor. 
+
+•    Step Three: Soldering the ESCs to the frame
+
+•    Step Four: I screwed the quadrotor arms into the frame. 
+
+•    Step Five: Next I installed the ESC onto the quadrotor arm. ESC’s are fastened to the quadrotor arms with zip ties through the predrilled holes.
+
+•    Step Six: Each motor is bolted to the quadrotor arm with four bolts and two pieces of motor mounts. At this point the ESC, quadrotor arm and motor should be attached to the drone.
+
+•    Step Seven: The next step is to solder in the XT60 male plug connectors onto the frame. The plug is used to connect and disconnect the battery to the frame. This makes it possible to manually disable the power source in case of an emergency.
+
+
+•    Step Eight: I insulated all the electrical connections with heat shrink tube to prevent short-circuits from occurring.
+
+•    Step Nine: The battery was attached to the drone with several sticky pads and Velcro straps.
+
+•    Step Ten: next I attached an Arduino onto the frame using sticky pads stuck onto a base that sits on top of the frame.
+
+
+•    Step Eleven: I placed the IMU near the horizontal centre of the drone to maintain the centre of gravity 
+
+•    Step Eleven: At this point I screwed in the propellers. 
+
+•    Step Twelve: The step is to connect the battery to the Frame. The ESC will make a beeping sound and the motors will spin for a few seconds. At this point the drone is fully assembled. 
 </ol>
 
 
 ## 2. Schematic
 <ol>
+This folder has all the Schematics needed for the drone assembly
+
+
+| Location      | Motor    | Direction              |
+| ------------   | --------- |-------------           |
+| Front Right  | Motor 1 | Clockwise            |
+| Back Right  | Motor 2 |Counterclockwise |
+| Back Left   | Motor 3  | Clockwise            |
+| Back Right  | Motor 4 |Counterclockwise |
+
+
+/*         1   2   */
+/*           \ /    */
+/*           / \    */
+/*         3   4   */
+
+
+</ol>
 
 ## 3. Code
+<ol>
+
+
+App Code
+- Folder for Android App
+- App Works with Android OS Lollipop
+
+Flight Controller Code
+- ESC_calibration Code
+[This code is used to test the motor to make sure that they're fully connected and able to spin. Can use this code to test which direction the motors are rotating. ]
+
+-Wifi_Test Code
+[This code is used to test out the wifi connection of the Arduino board]
+
+-Flight Controller Code
+[This is the flight controller for the drone that works with an IMU. It takes reading from IMU and uses PID control system to stabilise the drone during flight.]
+
+</ol>
 
 ## 4. Documents 
+<ol>
+
+1. Quadrotor_Drone_Components_List
+2. Project Research Document
 
 ## 5. Video
 <ol>
 
+1. Components Tests 
+2. Flight Tests
+
+</ol>
 
 
 
