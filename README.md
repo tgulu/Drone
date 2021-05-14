@@ -42,9 +42,9 @@
 
 •    Step Eleven: I placed the IMU near the horizontal centre of the drone to maintain the centre of gravity 
 
-•    Step Eleven: At this point I screwed in the propellers. 
+•    Step Twevle: At this point I screwed in the propellers. 
 
-•    Step Twelve: The step is to connect the battery to the Frame. The ESC will make a beeping sound and the motors will spin for a few seconds. At this point the drone is fully assembled. 
+•    Step Thirteen: The step is to connect the battery to the Frame. The ESC will make a beeping sound and the motors will spin for a few seconds. At this point the drone is fully assembled. 
 </ol>
 
 
@@ -55,7 +55,7 @@ This folder has all the Schematics needed for the drone assembly
 
 | Location      | Motor    | Direction              |
 | ------------   | --------- |-------------           |
-| Front Right  | Motor 1 | Clockwise            |
+| Front Left  | Motor 1 | Clockwise            |
 | Back Right  | Motor 2 |Counterclockwise |
 | Back Left   | Motor 3  | Clockwise            |
 | Back Right  | Motor 4 |Counterclockwise |
