@@ -5,7 +5,7 @@
 
 <ol>
 
-<li>[Images that show the Assembly of the drone]</li>
+<li>[Images that show the Assembly of the drone] (https://cseegit.essex.ac.uk/ce301_2020/ce301_gulu_thabo/-/tree/master/1.%20Assembly)</li>
 
 </ol>
 
