@@ -89,8 +89,9 @@ This folder has all the Schematics needed for the drone assembly
 ## 4. Documents 
 <ol>
 
-1. Quadrotor_Drone_Components_List
-2. Project Research Document
+1. Quadrotor_Drone_Components_List : Outlines the  components/tools and the price for them
+2. Project Research Document : Background Research for the project
+3. ESC manual : Explains how the ESC works 
 
 ## 5. Video
 <ol>
