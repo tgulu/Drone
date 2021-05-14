@@ -5,9 +5,9 @@
 
 <ol>
 
-<li>[Images that show the Assembly of the drone] Photos of the drone Assembly
-- Folder 1: Images show the bullet connectors being soldered onto the ESC and Motors
-- Folder 2: Images show the IMU being soldered with wire wire jumpers
+<li>[Images that show the Assembly of the drone] 
+[Folder 1: Images show the bullet connectors being soldered onto the ESC and Motors]
+[Folder 2: Images show the IMU being soldered with wire wire jumpers]
 - Folder 3: Images show the ESC being soldered to the frame        
 - Folder 4: Images shows the MPU-6050 being tested on the Arduino 
 - Folder 5: Images show the Motor and Esc being connected 
