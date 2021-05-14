@@ -22,6 +22,7 @@
 
 
 ## 2. Schematic
+<ol>
 
 ## 3. Code
 
