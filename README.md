@@ -5,7 +5,7 @@
 
 <ol>
 
-<li>
+
 1. Folder : Images show the bullet connectors being soldered onto the ESC and Motors
 2. Folder : Images show the IMU being soldered with wire wire jumpers
 3. Folder : Images show the ESC being soldered to the frame        
@@ -16,7 +16,7 @@
 8. Folder : Poster of Drone
 
 
-</li>
+
 
 </ol>
 
