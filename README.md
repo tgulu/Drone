@@ -61,10 +61,10 @@ This folder has all the Schematics needed for the drone assembly
 | Back Right  | Motor 4 |Counterclockwise |
 
 
-/*         1   2   */
-/*           \ /    */
-/*           / \    */
-/*         3   4   */
+        1   2   */
+         \ /    */
+         / \    */
+        3   4   */
 
 
 </ol>
@@ -73,19 +73,16 @@ This folder has all the Schematics needed for the drone assembly
 <ol>
 
 
-App Code
+1. App Code
 - Folder for Android App
 - App Works with Android OS Lollipop
 
-Flight Controller Code
-- ESC_calibration Code
-[This code is used to test the motor to make sure that they're fully connected and able to spin. Can use this code to test which direction the motors are rotating. ]
+2. Flight Controller Code
+- ESC_calibration Code: This code is used to test the motor to make sure that they're fully connected and able to spin. Can use this code to test which direction the motors are rotating. 
 
--Wifi_Test Code
-[This code is used to test out the wifi connection of the Arduino board]
+- Wifi_Test Code : This code is used to test out the wifi connection of the Arduino board
 
--Flight Controller Code
-[This is the flight controller for the drone that works with an IMU. It takes reading from IMU and uses PID control system to stabilise the drone during flight.]
+- Flight Controller Code : This is the flight controller for the drone that works with an IMU. It takes reading from IMU and uses PID control system to stabilise the drone during flight.
 
 </ol>
 
@@ -98,8 +95,8 @@ Flight Controller Code
 ## 5. Video
 <ol>
 
-1. Components Tests 
-2. Flight Tests
+1. Components Tests Folder: Video in here show the test ran on the components
+2. Flight Tests Folder : Videos show the flight testing of the drone 
 
 </ol>
 
@@ -107,4 +104,3 @@ Flight Controller Code
 
 
 
-</ol>
