@@ -1,4 +1,3 @@
-
 Photos of the drone Assembly
 Folder 1: Images show the bullet connectors being soldered onto the ESC and Motors
 Folder 2: Images show the IMU being soldered with wire wire jumpers
