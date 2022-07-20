@@ -1,9 +1,20 @@
 # Technical Documentation - Table of Contents
 
 
-## 1. Drone Assembly Images
+
+
+## 1. Abstract
 
 <ol>
+
+This project is designed to help anyone build a drone on their own. It includes all necessary equipment, schematics, code, and documentation.
+
+</ol>
+
+## 2. Drone Assembly Images
+
+<ol>
+
 
 
 1. Folder : Images show the bullet connectors being soldered onto the ESC and Motors
@@ -92,6 +103,8 @@ This folder has all the Schematics needed for the drone assembly
 1. Quadrotor_Drone_Components_List : Outlines the  components/tools and the price for them
 2. Project Research Document : Background Research for the project
 3. ESC manual : Explains how the ESC works 
+
+</ol>
 
 ## 5. Video
 <ol>
